@@ -197,6 +197,108 @@ def export_csv():
     )
 
 
+@app.route('/import', methods=['GET', 'POST'])
+@login_required
+def import_csv():
+    """批量导入CSV文件"""
+    if request.method == 'POST':
+        # 检查是否有文件
+        if 'csv_file' not in request.files:
+            flash('请选择CSV文件', 'error')
+            return redirect(request.url)
+
+        file = request.files['csv_file']
+
+        # 检查文件名
+        if file.filename == '':
+            flash('请选择CSV文件', 'error')
+            return redirect(request.url)
+
+        if not file.filename.endswith('.csv'):
+            flash('请上传CSV格式的文件', 'error')
+            return redirect(request.url)
+
+        try:
+            # 读取CSV文件
+            import csv
+            stream = io.StringIO(file.stream.read().decode('utf-8-sig'))
+            reader = csv.DictReader(stream)
+
+            # 支持的字段名（兼容中英文）
+            field_mapping = {
+                '产品名称': 'product_name',
+                '账号': 'account',
+                '密码': 'password',
+                '邮箱': 'email',
+                '手机号': 'phone',
+                '备注': 'remark',
+                # 英文兼容
+                'product_name': 'product_name',
+                'account': 'account',
+                'password': 'password',
+                'email': 'email',
+                'phone': 'phone',
+                'remark': 'remark'
+            }
+
+            success_count = 0
+            skip_count = 0
+            error_count = 0
+            errors = []
+
+            for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是表头）
+                try:
+                    # 提取数据
+                    product_name = row.get('产品名称', '').strip() or row.get('product_name', '').strip()
+                    account = row.get('账号', '').strip() or row.get('account', '').strip()
+                    password = row.get('密码', '') or row.get('password', '')
+                    email = row.get('邮箱', '').strip() or row.get('email', '').strip()
+                    phone = row.get('手机号', '').strip() or row.get('phone', '').strip()
+                    remark = row.get('备注', '').strip() or row.get('remark', '').strip()
+
+                    # 验证必填字段
+                    if not product_name or not account or not password:
+                        error_count += 1
+                        errors.append(f'第{row_num}行: 产品名称、账号、密码为必填项')
+                        continue
+
+                    # 检查产品是否已存在
+                    if pm.get_password(product_name):
+                        skip_count += 1
+                        errors.append(f'第{row_num}行: 产品 "{product_name}" 已存在，已跳过')
+                        continue
+
+                    # 添加密码
+                    if pm.add_password(product_name, account, password, email, phone, remark):
+                        success_count += 1
+                    else:
+                        error_count += 1
+                        errors.append(f'第{row_num}行: 添加失败')
+
+                except Exception as e:
+                    error_count += 1
+                    errors.append(f'第{row_num}行: 处理时出错 - {str(e)}')
+
+            # 显示导入结果
+            if success_count > 0:
+                flash(f'成功导入 {success_count} 条密码记录', 'success')
+            if skip_count > 0:
+                flash(f'跳过 {skip_count} 条已存在的记录', 'info')
+            if error_count > 0:
+                flash(f'导入失败 {error_count} 条记录', 'error')
+                # 显示前5个错误
+                for error in errors[:5]:
+                    flash(error, 'error')
+
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            flash(f'读取CSV文件失败: {str(e)}', 'error')
+            return redirect(request.url)
+
+    return render_template('import_passwords.html')
+
+
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
@@ -519,7 +621,10 @@ def create_templates():
 
     <div class="header-actions">
         <span style="color: #888;">共 {{ products|length }} 个产品</span>
-        <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('import_csv') }}" class="btn btn-success">📥 批量导入</a>
+            <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
+        </div>
     </div>
 
     {% if products %}
@@ -762,6 +867,54 @@ def create_templates():
 </div>
 {% endblock %}'''
 
+    # 批量导入密码页面
+    import_html = '''{% extends "base.html" %}
+
+{% block title %}批量导入 - 密码管理器{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📥 批量导入密码</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h4 style="margin-bottom: 10px;">CSV文件格式要求：</h4>
+        <ul style="margin-left: 20px; color: #666;">
+            <li>文件必须为 CSV 格式（.csv 后缀）</li>
+            <li>第一行为表头，包含以下字段：<strong>产品名称、账号、密码、邮箱、手机号、备注</strong></li>
+            <li>必填字段：<strong>产品名称、账号、密码</strong></li>
+            <li>可选字段：邮箱、手机号、备注</li>
+            <li>建议使用 Excel 或导出功能生成的 CSV 文件</li>
+        </ul>
+        <p style="margin-top: 10px; color: #888; font-size: 14px;">
+            提示：如果产品名称已存在，该记录将被跳过
+        </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="csv_file">选择CSV文件</label>
+            <input type="file" id="csv_file" name="csv_file" accept=".csv" required
+                   style="border: 2px dashed #ddd; padding: 30px; text-align: center; width: 100%; border-radius: 8px;">
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">开始导入</button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}'''
+
     # 写入模板文件
     templates = {
         'base.html': base_html,
@@ -770,7 +923,8 @@ def create_templates():
         'add_password.html': add_html,
         'view_password.html': view_html,
         'edit_password.html': edit_html,
-        'change_password.html': change_pwd_html
+        'change_password.html': change_pwd_html,
+        'import_passwords.html': import_html
     }
 
     for filename, content in templates.items():

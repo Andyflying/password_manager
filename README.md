@@ -255,3 +255,24 @@ password_manager/
 - 在安全的环境中使用此应用程序
 - 导出CSV后请及时安全处理文件（CSV文件为明文存储）
 - 产品名称是唯一的，重复添加同一产品名称会失败
+
+
+## docker使用方法
+
+构建镜像：
+```bash
+docker build -t password-manager .
+```
+
+运行容器（**只允许本机访问**，带数据持久化）：
+```bash
+docker run -d \
+  -p 127.0.0.1:5000:5000 \
+  -v $(pwd)/data:/app/password_manager/data \
+  --name password-manager \
+  password-manager
+```
+
+**关键点**：`-p 127.0.0.1:5000:5000` 确保只有本机能访问，外部网络无法访问。
+
+访问：http://localhost:5000 或 http://127.0.0.1:5000

@@ -25,7 +25,10 @@
 
     <div class="header-actions">
         <span style="color: #888;">共 {{ products|length }} 个产品</span>
-        <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('import_csv') }}" class="btn btn-success">📥 批量导入</a>
+            <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
+        </div>
     </div>
 
     {% if products %}
