@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+*.md
+templates/
+data/*.enc

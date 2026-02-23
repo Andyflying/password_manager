@@ -45,3 +45,4 @@ env/
 
 # Project specific - password_manager folder
 password_manager/
+data/
