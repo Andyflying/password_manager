@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 密码管理器{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 100px auto;">
+    <h1>🔐 密码管理器</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="password">主密码</label>
+            <input type="password" id="password" name="password" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">登录</button>
+    </form>
+
+    <p class="password-hint">初始密码: {{ default_password }}</p>
+</div>
+{% endblock %}

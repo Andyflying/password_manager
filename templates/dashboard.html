@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}密码列表 - 密码管理器{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="top-bar">
+        <h2>📋 密码列表</h2>
+        <div class="nav-links">
+            <a href="{{ url_for('export_csv') }}">📥 导出CSV</a>
+            <a href="{{ url_for('change_password') }}">🔑 更改主密码</a>
+            <a href="{{ url_for('logout') }}">退出</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="header-actions">
+        <span style="color: #888;">共 {{ products|length }} 个产品</span>
+        <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
+    </div>
+
+    {% if products %}
+    <ul class="product-list">
+        {% for product in products %}
+        <li class="product-item">
+            <span class="product-name">{{ product }}</span>
+            <div class="product-actions">
+                <a href="{{ url_for('view_password', product_name=product) }}" class="btn btn-secondary btn-small">查看</a>
+                <a href="{{ url_for('edit_password', product_name=product) }}" class="btn btn-primary btn-small">编辑</a>
+                <form method="POST" action="{{ url_for('delete_password', product_name=product) }}" style="display: inline;" onsubmit="return confirm('确定要删除 "{{ product }}" 吗？');">
+                    <button type="submit" class="btn btn-danger btn-small">删除</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无密码记录</p>
+        <p style="margin-top: 10px;">点击上方按钮添加第一个密码</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
