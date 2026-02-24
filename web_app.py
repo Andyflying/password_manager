@@ -15,7 +15,7 @@ app.secret_key = os.urandom(24)
 
 DEFAULT_MASTER_PASSWORD = "000000"
 DB_PATH = "password_manager/data/passwords.enc"
-SESSION_TIMEOUT = 60
+SESSION_TIMEOUT = 120
 
 # 初始化密码管理器
 pm = PasswordManager(DB_PATH)
