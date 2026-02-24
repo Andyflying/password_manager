@@ -36,25 +36,21 @@ class PasswordDB:
         :return: 解密后的数据或None
         """
         if not os.path.exists(self.db_path):
-            # 如果文件不存在，返回空数据
             return {}
 
         try:
             with open(self.db_path, 'rb') as f:
-                # 读取盐值 (前16字节)
                 salt = f.read(16)
-                # 读取IV (接下来16字节)
-                iv = f.read(16)
-                # 读取剩余的是密文
+                iv = f.read(12)
+                auth_tag = f.read(16)
                 ciphertext = f.read()
 
-            if len(salt) != 16 or len(iv) != 16:
+            if len(salt) != 16 or len(iv) != 12 or len(auth_tag) != 16:
                 print("数据库文件格式错误")
                 return None
 
-            # 使用密码创建加密器并解密
             encryptor = Encryptor(password)
-            return encryptor.decrypt(salt, iv, ciphertext)
+            return encryptor.decrypt(salt, iv, ciphertext, auth_tag)
 
         except Exception as e:
             print(f"加载数据库失败: {e}")
@@ -69,14 +65,13 @@ class PasswordDB:
         :return: 是否保存成功
         """
         try:
-            # 使用密码创建加密器并加密
             encryptor = Encryptor(password)
-            salt, iv, ciphertext = encryptor.encrypt(data)
+            salt, iv, ciphertext, auth_tag = encryptor.encrypt(data)
 
-            # 写入加密数据
             with open(self.db_path, 'wb') as f:
                 f.write(salt)
                 f.write(iv)
+                f.write(auth_tag)
                 f.write(ciphertext)
 
             return True
