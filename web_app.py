@@ -86,7 +86,7 @@ def dashboard():
         search_lower = search_query.lower()
         products = [p for p in products if search_lower in p.lower()]
     
-    ITEMS_PER_PAGE = 6
+    ITEMS_PER_PAGE = 5
     page = request.args.get('page', 1, type=int)
     total = len(products)
     total_pages = (total + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
@@ -94,12 +94,20 @@ def dashboard():
     end = start + ITEMS_PER_PAGE
     products_page = products[start:end]
     
+    page_range = []
+    for p in range(1, total_pages + 1):
+        if p == 1 or p == total_pages or (p >= page - 1 and p <= page + 1):
+            page_range.append(p)
+        elif p == page - 2 or p == page + 2:
+            page_range.append('...')
+    
     return render_template('dashboard.html', 
                           products=products_page, 
                           search_query=search_query,
                           page=page,
                           total_pages=total_pages,
-                          total=total)
+                          total=total,
+                          page_range=page_range)
 
 
 @app.route('/add', methods=['GET', 'POST'])
