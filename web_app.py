@@ -48,7 +48,6 @@ def login():
 
         if pm.authenticate(password):
             session['authenticated'] = True
-            session['master_password'] = password
             flash('登录成功！', 'success')
             return redirect(url_for('dashboard'))
         else:
