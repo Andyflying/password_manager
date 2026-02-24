@@ -4,6 +4,7 @@ Web版密码管理器，提供浏览器界面来管理密码
 
 import os
 import io
+import time
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from functools import wraps
 from password_manager import PasswordManager
@@ -14,6 +15,7 @@ app.secret_key = os.urandom(24)
 
 DEFAULT_MASTER_PASSWORD = "000000"
 DB_PATH = "password_manager/data/passwords.enc"
+SESSION_TIMEOUT = 60
 
 # 初始化密码管理器
 pm = PasswordManager(DB_PATH)
@@ -25,6 +27,14 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if not session.get('authenticated'):
             return redirect(url_for('login'))
+        
+        login_time = session.get('login_time', 0)
+        if time.time() - login_time > SESSION_TIMEOUT:
+            session.clear()
+            flash('登录已超时，请重新登录', 'error')
+            return redirect(url_for('login'))
+        
+        session['login_time'] = time.time()
         return f(*args, **kwargs)
     return decorated_function
 
@@ -48,6 +58,7 @@ def login():
 
         if pm.authenticate(password):
             session['authenticated'] = True
+            session['login_time'] = time.time()
             flash('登录成功！', 'success')
             return redirect(url_for('dashboard'))
         else:
