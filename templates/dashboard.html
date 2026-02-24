@@ -61,15 +61,7 @@
         <span class="btn btn-secondary btn-small" style="color: #aaa; cursor: not-allowed;">上一页</span>
         {% endif %}
         
-        {% for p in page_range %}
-            {% if p == '...' %}
-            <span style="color: #888;">...</span>
-            {% elif p == page %}
-            <span style="padding: 6px 12px; background: #667eea; color: white; border-radius: 4px;">{{ p }}</span>
-            {% else %}
-            <a href="{{ url_for('dashboard', page=p, search=search_query) }}" style="padding: 6px 12px; color: #667eea; text-decoration: none;">{{ p }}</a>
-            {% endif %}
-        {% endfor %}
+        <span style="padding: 6px 12px; color: #666;">{{ page }} / {{ total_pages }}</span>
         
         {% if page < total_pages %}
         <a href="{{ url_for('dashboard', page=page+1, search=search_query) }}" class="btn btn-secondary btn-small">下一页</a>
