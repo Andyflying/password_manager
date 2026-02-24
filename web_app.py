@@ -80,7 +80,26 @@ def logout():
 def dashboard():
     """主界面 - 显示所有产品"""
     products = pm.list_products()
-    return render_template('dashboard.html', products=products)
+    search_query = request.args.get('search', '').strip()
+    
+    if search_query:
+        search_lower = search_query.lower()
+        products = [p for p in products if search_lower in p.lower()]
+    
+    ITEMS_PER_PAGE = 6
+    page = request.args.get('page', 1, type=int)
+    total = len(products)
+    total_pages = (total + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
+    start = (page - 1) * ITEMS_PER_PAGE
+    end = start + ITEMS_PER_PAGE
+    products_page = products[start:end]
+    
+    return render_template('dashboard.html', 
+                          products=products_page, 
+                          search_query=search_query,
+                          page=page,
+                          total_pages=total_pages,
+                          total=total)
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -630,8 +649,15 @@ def create_templates():
     {% endwith %}
 
     <div class="header-actions">
-        <span style="color: #888;">共 {{ products|length }} 个产品</span>
-        <div style="display: flex; gap: 10px;">
+        <form method="GET" action="{{ url_for('dashboard') }}" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="搜索产品名称..." style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 200px;">
+            <button type="submit" class="btn btn-secondary btn-small">搜索</button>
+            {% if search_query %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-small" style="background: #e0e0e0; color: #555; text-decoration: none;">清除</a>
+            {% endif %}
+        </form>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="color: #888;">共 {{ products|length }} 个产品</span>
             <a href="{{ url_for('import_csv') }}" class="btn btn-success">📥 批量导入</a>
             <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
         </div>

@@ -24,8 +24,15 @@
     {% endwith %}
 
     <div class="header-actions">
-        <span style="color: #888;">共 {{ products|length }} 个产品</span>
-        <div style="display: flex; gap: 10px;">
+        <form method="GET" action="{{ url_for('dashboard') }}" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="搜索产品名称..." style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 200px;">
+            <button type="submit" class="btn btn-secondary btn-small">搜索</button>
+            {% if search_query %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-small" style="background: #e0e0e0; color: #555; text-decoration: none;">清除</a>
+            {% endif %}
+        </form>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="color: #888;">共 {{ total }} 个产品</span>
             <a href="{{ url_for('import_csv') }}" class="btn btn-success">📥 批量导入</a>
             <a href="{{ url_for('add_password') }}" class="btn btn-primary">➕ 添加密码</a>
         </div>
@@ -39,13 +46,26 @@
             <div class="product-actions">
                 <a href="{{ url_for('view_password', product_name=product) }}" class="btn btn-secondary btn-small">查看</a>
                 <a href="{{ url_for('edit_password', product_name=product) }}" class="btn btn-primary btn-small">编辑</a>
-                <form method="POST" action="{{ url_for('delete_password', product_name=product) }}" style="display: inline;" onsubmit="return confirm('确定要删除 "{{ product }}" 吗？');">
+                <form method="POST" action="{{ url_for('delete_password', product_name=product) }}" style="display: inline;" onsubmit="return confirm('确定要删除 &quot;{{ product }}&quot; 吗？');">
                     <button type="submit" class="btn btn-danger btn-small">删除</button>
                 </form>
             </div>
         </li>
         {% endfor %}
     </ul>
+    
+    {% if total_pages > 1 %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page > 1 %}
+        <a href="{{ url_for('dashboard', page=page-1, search=search_query) }}" class="btn btn-secondary btn-small">上一页</a>
+        {% endif %}
+        <span style="padding: 6px 12px; color: #666;">{{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('dashboard', page=page+1, search=search_query) }}" class="btn btn-secondary btn-small">下一页</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
     {% else %}
     <div class="empty-state">
         <p>暂无密码记录</p>
